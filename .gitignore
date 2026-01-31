@@ -30,3 +30,6 @@ dist-ssr
 .env.production
 .env.development
 
+
+# Firebase CLI cache
+.firebase/
