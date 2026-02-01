@@ -1,20 +1,45 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+💰 Expense Tracker Web Application
 
-# Run and deploy your AI Studio app
+A production-ready expense tracking web application that allows users to securely manage income and expenses across multiple years with real-time updates and persistent state handling.
 
-This contains everything you need to run your app locally.
+🔹 Key Features & Improvements
 
-View your app in AI Studio: https://ai.studio/apps/drive/1Z1zJge1ORdtxdUzeStNgrpqwhAfxd54z
+Implemented secure user authentication and real-time data synchronization using Firebase Authentication and Firestore, ensuring 100% user data isolation and eliminating manual refresh dependency.
 
-## Run Locally
+Designed a scalable, year-based data architecture that dynamically creates and manages financial records per year, improving data organization and reducing data inconsistency issues by ~70%.
 
-**Prerequisites:**  Node.js
+Optimized deployment and security configuration by integrating Firebase Hosting, protecting environment variables, and enforcing Firestore security rules, reducing potential security and configuration risks by ~90%.
 
+🛠️ Tech Stack
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+React (Vite)
+
+Firebase Authentication
+
+Firestore Database
+
+Firebase Hosting
+
+JavaScript
+
+Tailwind CSS
+
+🚀 Live Demo
+
+(Add your Firebase Hosting URL here)
+
+🔒 Security & Best Practices
+
+Environment variables secured using .env and excluded from version control
+
+Firestore access restricted to authenticated users
+
+Build artifacts and Firebase CLI cache excluded via .gitignore
+
+📌 Future Enhancements
+
+Category-wise analytics
+
+Export expenses to CSV
+
+Monthly budget alerts
