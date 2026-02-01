@@ -26,6 +26,9 @@ import UpdateIncomeModal from './components/UpdateIncomeModal';
 import Auth from './components/Auth';
 import { auth, db } from './firebase';
 
+const CURRENT_YEAR = new Date().getFullYear().toString();
+
+
 function App() {
   const [loadingExpenses, setLoadingExpenses] = useState(true);
   const [availableYears, setAvailableYears] = useState([]);
@@ -206,6 +209,50 @@ if (!sortedYears.includes(selectedYear)) {
     periodIncome > 0 ? (totalSpentInPeriod / periodIncome) * 100 : 0;
 
  
+const handleDeleteYear = async () => {
+  // ❌ Block deleting current year
+  if (selectedYear === CURRENT_YEAR) {
+    alert("You cannot delete the current year");
+    return;
+  }
+
+  const confirmDelete = window.confirm(
+    `Are you sure you want to delete year ${selectedYear}?`
+  );
+
+  if (!confirmDelete) return;
+
+  // 🔥 Reference to selected year
+  const yearRef = doc(db, "users", user.uid, "years", selectedYear);
+
+  // 🔥 Reference to expenses inside that year
+  const expensesRef = collection(
+    db,
+    "users",
+    user.uid,
+    "years",
+    selectedYear,
+    "expenses"
+  );
+
+  // 🔥 Delete all expenses
+  const snapshot = await getDocs(expensesRef);
+  await Promise.all(snapshot.docs.map((d) => deleteDoc(d.ref)));
+
+  // 🔥 Delete year document
+  await deleteDoc(yearRef);
+
+  // 🔄 Update UI state
+  setAvailableYears((prev) =>
+    prev.filter((year) => year !== selectedYear)
+  );
+
+  // 🔁 Switch dashboard to current year
+  setSelectedYear(CURRENT_YEAR);
+  setSelectedMonth(null);
+};
+
+
 
   // ➕ ADD EXPENSE (🔥 backend + UI)
   const handleAddExpense = async (newExpense) => {
@@ -365,6 +412,18 @@ if (!user) return <Auth />;
         <option value="__ADD_NEW_YEAR__">➕ Add new year</option>
 
       </select>
+       <button
+    onClick={handleDeleteYear}
+    disabled={selectedYear === CURRENT_YEAR}
+    className={`px-4 py-2 rounded-xl text-sm font-bold
+      ${
+        selectedYear === CURRENT_YEAR
+          ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+          : "bg-red-500 text-white hover:bg-red-600"
+      }`}
+  >
+    Delete Year
+  </button>
     </div>
   </div>
 
