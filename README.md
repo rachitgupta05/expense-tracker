@@ -26,7 +26,7 @@ Tailwind CSS
 
 🚀 Live Demo
 
-(Add your Firebase Hosting URL here)
+https://expense-tracker2-57a5c.web.app/
 
 🔒 Security & Best Practices
 
