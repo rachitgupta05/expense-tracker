@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { onSnapshot } from 'firebase/firestore';
 
+
 import {
   collection,
   getDocs,
@@ -26,10 +27,13 @@ import UpdateIncomeModal from './components/UpdateIncomeModal';
 import Auth from './components/Auth';
 import { auth, db } from './firebase';
 
-const CURRENT_YEAR = new Date().getFullYear().toString();
 
 
 function App() {
+  const [currentYear, setCurrentYear] = useState(
+  new Date().getFullYear().toString()
+);
+
   const [loadingExpenses, setLoadingExpenses] = useState(true);
   const [availableYears, setAvailableYears] = useState([]);
   const [authLoading, setAuthLoading] = useState(true);
@@ -68,17 +72,21 @@ function App() {
   // 🔐 AUTH LISTENER
   useEffect(() => {
   const unsub = onAuthStateChanged(auth, async (u) => {
-    if (u) {
-      // optional: email verification check here
 
-      setUser({
-        uid: u.uid,
-        email: u.email,
-        name: u.email.split("@")[0], // or Firestore name
-      });
-    } else {
-      setUser(null);
-    }
+if (u) {
+  const userRef = doc(db, "users", u.uid);
+  const snap = await getDoc(userRef);
+
+  setUser({
+    uid: u.uid,
+    email: u.email,
+    name: snap.exists()
+      ? snap.data().name
+      : u.email.split("@")[0],
+  });
+} else {
+  setUser(null);
+}
 
     // 🔥 AUTH CHECK COMPLETED
     setAuthLoading(false);
@@ -86,6 +94,24 @@ function App() {
 
   return () => unsub();
 }, []);
+
+useEffect(() => {
+  const interval = setInterval(() => {
+    const nowYear = new Date().getFullYear().toString();
+
+    if (nowYear !== currentYear) {
+  setCurrentYear(nowYear);
+
+  // Only switch if user is on old current year
+  if (selectedYear === currentYear) {
+    setSelectedYear(nowYear);
+    setSelectedMonth(null);
+  }
+}
+  }, 300000); // check every 5 minute
+
+  return () => clearInterval(interval);
+}, [currentYear, selectedYear]);
 
 
 
@@ -101,22 +127,25 @@ function App() {
 
     // 🔥 NEW USER CASE
     if (years.length === 0) {
-      const currentYear = new Date().getFullYear().toString();
+      const currYear = new Date().getFullYear().toString();
 
-      await setDoc(doc(db, 'users', user.uid, 'years', currentYear), {
+      await setDoc(doc(db, 'users', user.uid, 'years', currYear), {
         totalIncome: 0,
         totalExpense: 0,
         balance: 0,
-        year: currentYear,
+        year: currYear,
         createdAt: serverTimestamp(),
       });
 
-      years = [currentYear];
-      setSelectedYear(currentYear);
+      years = [currYear];
+      setSelectedYear(currYear);
     }
 
     const sortedYears = years.sort((a, b) => b.localeCompare(a));
-setAvailableYears(sortedYears);
+setAvailableYears((prev) => {
+  const merged = [...new Set([...sortedYears, selectedYear])];
+  return merged.sort((a, b) => b.localeCompare(a));
+});
 
 // 🔒 Ensure selectedYear is valid
 if (!sortedYears.includes(selectedYear)) {
@@ -211,7 +240,7 @@ if (!sortedYears.includes(selectedYear)) {
  
 const handleDeleteYear = async () => {
   // ❌ Block deleting current year
-  if (selectedYear === CURRENT_YEAR) {
+  if (selectedYear === currentYear) {
     alert("You cannot delete the current year");
     return;
   }
@@ -248,7 +277,7 @@ const handleDeleteYear = async () => {
   );
 
   // 🔁 Switch dashboard to current year
-  setSelectedYear(CURRENT_YEAR);
+  setSelectedYear(() => currentYear);
   setSelectedMonth(null);
 };
 
@@ -265,7 +294,7 @@ const handleDeleteYear = async () => {
       'expenses'
     );
 
-    const docRef = await addDoc(expRef, {
+    await addDoc(expRef, {
       ...newExpense,
       month: newExpense.month,
       createdAt: serverTimestamp(),
@@ -365,7 +394,7 @@ const handleDeleteYear = async () => {
   );
 }
 
-if (!user) return <Auth />;
+if (!user) return <Auth  />;
 
 
   return (
@@ -414,10 +443,10 @@ if (!user) return <Auth />;
       </select>
        <button
     onClick={handleDeleteYear}
-    disabled={selectedYear === CURRENT_YEAR}
+    disabled={selectedYear === currentYear}
     className={`px-4 py-2 rounded-xl text-sm font-bold
       ${
-        selectedYear === CURRENT_YEAR
+        selectedYear === currentYear
           ? "bg-slate-200 text-slate-400 cursor-not-allowed"
           : "bg-red-500 text-white hover:bg-red-600"
       }`}

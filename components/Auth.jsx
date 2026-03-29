@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-} from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '../firebase';
-import { sendEmailVerification } from "firebase/auth";
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword 
+} from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "../firebase";
+
 
 
 const Auth = () => {
@@ -17,25 +17,52 @@ const Auth = () => {
   const handleSubmit = async (e) => {
   e.preventDefault();
 
-  if (isLogin) {
-    // 🔐 LOGIN
-    const cred = await signInWithEmailAndPassword(auth, email, password);
-    onAuthSuccess(); // auth listener will handle user
-  } else {
-    // 🆕 SIGN UP
-    const cred = await createUserWithEmailAndPassword(auth, email, password);
+  if (!email || !password) {
+    alert("Please fill all fields");
+    return;
+  }
 
-    // 🔥 SAVE USER PROFILE
-    await setDoc(doc(db, "users", cred.user.uid), {
-      name: name,
-      email: email,
-      createdAt: new Date(),
-    });
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    onAuthSuccess();
+if (!emailRegex.test(email)) {
+  alert("Invalid email format");
+  return;
+}
+
+  try {
+    if (isLogin) {
+      // 🔐 LOGIN
+      await signInWithEmailAndPassword(auth, email, password);
+    } else {
+      // 🆕 SIGNUP
+      const res = await createUserWithEmailAndPassword(auth, email, password);
+
+      await setDoc(doc(db, "users", res.user.uid), {
+        name,
+        email,
+        createdAt: new Date(),
+      });
+    }
+  } catch (err) {
+    if (isLogin) {
+      if (err.code === "auth/invalid-email") {
+        alert("Invalid email");
+      } else {
+        alert("Invalid email or password.");
+      }
+    } else {
+      if (err.code === "auth/email-already-in-use") {
+        alert("User already exists. Please login.");
+      } else if (err.code === "auth/invalid-email") {
+        alert("Invalid email");
+      } else if (err.code === "auth/weak-password") {
+        alert("Password should be at least 6 characters.");
+      } else {
+        alert(err.message);
+      }
+    }
   }
 };
-
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
